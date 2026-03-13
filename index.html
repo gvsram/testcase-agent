@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TestCase AI Agent</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --card: #16161f;
+    --border: #2a2a3a;
+    --accent: #00ff88;
+    --accent2: #7c3aed;
+    --accent3: #f59e0b;
+    --manual: #06b6d4;
+    --auto: #a855f7;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --danger: #ef4444;
+    --success: #22c55e;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,255,136,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,136,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container { max-width: 1400px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+  /* Header */
+  header {
+    padding: 28px 0 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-icon {
+    width: 44px; height: 44px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+  }
+
+  .logo-text { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+  .logo-text span { color: var(--accent); }
+
+  .badge {
+    margin-left: auto;
+    background: rgba(0,255,136,0.1);
+    border: 1px solid rgba(0,255,136,0.3);
+    color: var(--accent);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+
+  /* Main layout */
+  .main { display: grid; grid-template-columns: 420px 1fr; gap: 24px; padding: 28px 0; min-height: calc(100vh - 100px); }
+
+  @media (max-width: 900px) {
+    .main { grid-template-columns: 1fr; }
+  }
+
+  /* Input Panel */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .panel-header {
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .panel-header .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .panel-body { padding: 20px; }
+
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  textarea {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    padding: 14px;
+    resize: vertical;
+    min-height: 140px;
+    transition: border-color 0.2s;
+    outline: none;
+  }
+
+  textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,255,136,0.08); }
+  textarea::placeholder { color: var(--muted); }
+
+  .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 16px 0; }
+
+  .opt-card {
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    user-select: none;
+  }
+
+  .opt-card:hover { border-color: var(--muted); }
+  .opt-card.active { border-color: var(--accent); background: rgba(0,255,136,0.05); }
+  .opt-card .opt-icon { font-size: 20px; margin-bottom: 4px; }
+  .opt-card .opt-label { font-size: 12px; font-weight: 700; color: var(--muted); }
+  .opt-card.active .opt-label { color: var(--accent); }
+
+  .select-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+
+  select {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    padding: 10px 12px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  select:focus { border-color: var(--accent); }
+
+  .generate-btn {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--accent), #00cc6a);
+    border: none;
+    border-radius: 10px;
+    color: #000;
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 4px;
+  }
+
+  .generate-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(0,255,136,0.25); }
+  .generate-btn:active { transform: translateY(0); }
+  .generate-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  /* Output Panel */
+  .output-panel { display: flex; flex-direction: column; gap: 0; }
+
+  .tabs {
+    display: flex;
+    gap: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px 12px 0 0;
+    overflow: hidden;
+  }
+
+  .tab {
+    flex: 1;
+    padding: 14px 16px;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-bottom: 3px solid transparent;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .tab:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+  .tab.active[data-tab="manual"] { color: var(--manual); border-bottom-color: var(--manual); background: rgba(6,182,212,0.05); }
+  .tab.active[data-tab="automation"] { color: var(--auto); border-bottom-color: var(--auto); background: rgba(168,85,247,0.05); }
+  .tab.active[data-tab="summary"] { color: var(--accent3); border-bottom-color: var(--accent3); background: rgba(245,158,11,0.05); }
+
+  .tab-count {
+    background: rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 2px 8px;
+    font-size: 11px;
+  }
+
+  .tab.active[data-tab="manual"] .tab-count { background: rgba(6,182,212,0.2); color: var(--manual); }
+  .tab.active[data-tab="automation"] .tab-count { background: rgba(168,85,247,0.2); color: var(--auto); }
+
+  .result-area {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top: none;
+    border-radius: 0 0 12px 12px;
+    flex: 1;
+    min-height: 600px;
+    overflow-y: auto;
+  }
+
+  /* Empty state */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 500px;
+    gap: 16px;
+    color: var(--muted);
+  }
+
+  .empty-icon { font-size: 56px; opacity: 0.4; }
+  .empty-title { font-size: 18px; font-weight: 700; color: var(--text); opacity: 0.4; }
+  .empty-sub { font-size: 13px; text-align: center; max-width: 280px; line-height: 1.6; }
+
+  /* Loading */
+  .loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 500px;
+    gap: 20px;
+  }
+
+  .spinner {
+    width: 48px; height: 48px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-text { color: var(--muted); font-size: 14px; font-family: 'Space Mono', monospace; }
+  .loading-dots::after {
+    content: '';
+    animation: dots 1.5s infinite;
+  }
+  @keyframes dots {
+    0% { content: ''; }
+    33% { content: '.'; }
+    66% { content: '..'; }
+    100% { content: '...'; }
+  }
+
+  /* Test cases */
+  .section-header {
+    padding: 16px 20px 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    z-index: 10;
+  }
+
+  .section-title { font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .section-count { font-family: 'Space Mono', monospace; font-size: 12px; padding: 3px 10px; border-radius: 20px; }
+  .manual-count { background: rgba(6,182,212,0.15); color: var(--manual); }
+  .auto-count { background: rgba(168,85,247,0.15); color: var(--auto); }
+
+  .export-btn {
+    margin-left: auto;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--muted);
+    padding: 6px 14px;
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .tc-list { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+
+  .tc-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .tc-card:hover { border-color: rgba(255,255,255,0.15); }
+
+  .tc-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .tc-id {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+  }
+
+  .tc-id.manual { background: rgba(6,182,212,0.15); color: var(--manual); }
+  .tc-id.auto { background: rgba(168,85,247,0.15); color: var(--auto); }
+
+  .tc-title { font-size: 13px; font-weight: 600; flex: 1; line-height: 1.4; }
+
+  .tc-priority {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+  .p-high { background: rgba(239,68,68,0.15); color: #ef4444; }
+  .p-medium { background: rgba(245,158,11,0.15); color: var(--accent3); }
+  .p-low { background: rgba(34,197,94,0.15); color: var(--success); }
+
+  .tc-chevron { color: var(--muted); font-size: 12px; transition: transform 0.2s; }
+  .tc-card.open .tc-chevron { transform: rotate(180deg); }
+
+  .tc-body { display: none; padding: 0 14px 14px; border-top: 1px solid var(--border); }
+  .tc-card.open .tc-body { display: block; }
+
+  .tc-meta { display: flex; gap: 8px; flex-wrap: wrap; padding: 10px 0 8px; }
+
+  .tc-tag {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.06);
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .tc-section { margin-top: 12px; }
+  .tc-section-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+  }
+
+  .tc-section-content {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: #c4cdd6;
+  }
+
+  .step-list { list-style: none; }
+  .step-list li {
+    display: flex;
+    gap: 10px;
+    padding: 4px 0;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #c4cdd6;
+  }
+  .step-list li .step-num {
+    min-width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .code-block {
+    background: #0d0d14;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: #a5f3a0;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .result-area2 { display: none; }
+  .result-area2.active { display: flex; flex-direction: column; }
+
+  /* Summary */
+  .summary-grid { padding: 16px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; text-align: center; }
+  .stat-num { font-size: 32px; font-weight: 800; font-family: 'Space Mono', monospace; }
+  .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+  .stat-manual { color: var(--manual); }
+  .stat-auto { color: var(--auto); }
+  .stat-total { color: var(--accent); }
+
+  .coverage-list { padding: 0 16px 16px; }
+  .cov-title { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+  .cov-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .cov-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+  .cov-name { font-size: 13px; flex: 1; }
+  .cov-bar-wrap { width: 100px; height: 6px; background: var(--border); border-radius: 3px; }
+  .cov-bar { height: 100%; border-radius: 3px; background: var(--accent); }
+
+  /* Error */
+  .error-msg {
+    margin: 20px;
+    padding: 14px 16px;
+    background: rgba(239,68,68,0.08);
+    border: 1px solid rgba(239,68,68,0.3);
+    border-radius: 8px;
+    color: #ef4444;
+    font-size: 13px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🧪</div>
+      <div class="logo-text">TestCase <span>Agent</span></div>
+    </div>
+    <div class="badge">AI-POWERED</div>
+  </header>
+
+  <div class="main">
+    <!-- LEFT: Input Panel -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="dot"></div>
+        Scenario Input
+      </div>
+      <div class="panel-body">
+        <label>Describe Your Scenario</label>
+        <textarea id="scenarioInput" placeholder="e.g. Login page with email and password fields, forgot password, remember me checkbox, and social login (Google, GitHub)..."></textarea>
+
+        <div style="margin-top:16px; margin-bottom:8px;">
+          <label>Test Type</label>
+          <div class="options-grid">
+            <div class="opt-card active" data-type="both" onclick="selectType(this)">
+              <div class="opt-icon">⚡</div>
+              <div class="opt-label">Both</div>
+            </div>
+            <div class="opt-card" data-type="manual" onclick="selectType(this)">
+              <div class="opt-icon">👤</div>
+              <div class="opt-label">Manual Only</div>
+            </div>
+            <div class="opt-card" data-type="automation" onclick="selectType(this)">
+              <div class="opt-icon">🤖</div>
+              <div class="opt-label">Automation Only</div>
+            </div>
+            <div class="opt-card" data-type="edge" onclick="selectType(this)">
+              <div class="opt-icon">🔥</div>
+              <div class="opt-label">Edge Cases</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="select-row">
+          <div>
+            <label>Framework</label>
+            <select id="framework">
+              <option value="selenium">Selenium</option>
+              <option value="playwright">Playwright</option>
+              <option value="cypress">Cypress</option>
+              <option value="pytest">PyTest</option>
+              <option value="jest">Jest</option>
+              <option value="testng">TestNG</option>
+            </select>
+          </div>
+          <div>
+            <label>Language</label>
+            <select id="language">
+              <option value="python">Python</option>
+              <option value="javascript">JavaScript</option>
+              <option value="java">Java</option>
+              <option value="typescript">TypeScript</option>
+              <option value="csharp">C#</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="select-row">
+          <div>
+            <label>Priority Focus</label>
+            <select id="priority">
+              <option value="all">All Priorities</option>
+              <option value="critical">Critical First</option>
+              <option value="regression">Regression Suite</option>
+            </select>
+          </div>
+          <div>
+            <label>Coverage Depth</label>
+            <select id="depth">
+              <option value="standard">Standard</option>
+              <option value="deep">Deep Dive</option>
+              <option value="quick">Quick Smoke</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="generate-btn" id="generateBtn" onclick="generateTestCases()">
+          <span>⚡</span> Generate Test Cases
+        </button>
+
+        <div style="margin-top: 10px; text-align: center;">
+          <span style="font-size: 12px; color: var(--muted);">Try: </span>
+          <button onclick="loadExample('login')" style="background:none;border:none;color:var(--accent);font-family:'Syne',sans-serif;font-size:12px;cursor:pointer;text-decoration:underline;">Login</button> ·
+          <button onclick="loadExample('cart')" style="background:none;border:none;color:var(--accent);font-family:'Syne',sans-serif;font-size:12px;cursor:pointer;text-decoration:underline;">Shopping Cart</button> ·
+          <button onclick="loadExample('api')" style="background:none;border:none;color:var(--accent);font-family:'Syne',sans-serif;font-size:12px;cursor:pointer;text-decoration:underline;">REST API</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Output -->
+    <div class="output-panel">
+      <div class="tabs">
+        <button class="tab active" data-tab="manual" onclick="switchTab('manual')">
+          👤 Manual <span class="tab-count" id="manualCount">0</span>
+        </button>
+        <button class="tab" data-tab="automation" onclick="switchTab('automation')">
+          🤖 Automation <span class="tab-count" id="autoCount">0</span>
+        </button>
+        <button class="tab" data-tab="summary" onclick="switchTab('summary')">
+          📊 Summary
+        </button>
+      </div>
+
+      <div class="result-area" id="tabManual">
+        <div class="empty-state" id="emptyState">
+          <div class="empty-icon">🧪</div>
+          <div class="empty-title">No Test Cases Yet</div>
+          <div class="empty-sub">Enter a scenario and click Generate to create comprehensive test cases instantly.</div>
+        </div>
+        <div id="loadingState" class="loading-state hidden">
+          <div class="spinner"></div>
+          <div class="loading-text">Analyzing scenario<span class="loading-dots"></span></div>
+        </div>
+        <div id="errorState" class="hidden"></div>
+        <div id="manualResults" class="hidden">
+          <div class="section-header">
+            <span class="section-title">Manual Test Cases</span>
+            <span class="section-count manual-count" id="manualCountHeader">0 cases</span>
+            <button class="export-btn" onclick="exportCSV('manual')">⬇ Export CSV</button>
+          </div>
+          <div class="tc-list" id="manualList"></div>
+        </div>
+      </div>
+
+      <div class="result-area hidden" id="tabAutomation">
+        <div id="automationResults" class="hidden">
+          <div class="section-header">
+            <span class="section-title">Automation Test Cases</span>
+            <span class="section-count auto-count" id="autoCountHeader">0 cases</span>
+            <button class="export-btn" onclick="exportCode()">⬇ Export Code</button>
+          </div>
+          <div class="tc-list" id="automationList"></div>
+        </div>
+      </div>
+
+      <div class="result-area hidden" id="tabSummary">
+        <div id="summaryResults" class="hidden">
+          <div class="summary-grid">
+            <div class="stat-card"><div class="stat-num stat-manual" id="sumManual">0</div><div class="stat-label">Manual Cases</div></div>
+            <div class="stat-card"><div class="stat-num stat-auto" id="sumAuto">0</div><div class="stat-label">Auto Cases</div></div>
+            <div class="stat-card"><div class="stat-num stat-total" id="sumTotal">0</div><div class="stat-label">Total Cases</div></div>
+          </div>
+          <div class="coverage-list">
+            <div class="cov-title">Coverage Areas</div>
+            <div id="coverageList"></div>
+          </div>
+          <div style="padding:0 16px 16px;">
+            <div class="cov-title">AI Recommendations</div>
+            <div id="recommendations" style="font-size:13px;color:#c4cdd6;line-height:1.8;"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+let selectedType = 'both';
+let allData = null;
+
+const examples = {
+  login: "User login page with email/password fields, forgot password link, remember me checkbox, and social login via Google and GitHub. Includes CAPTCHA after 3 failed attempts and account lock after 5 failed attempts.",
+  cart: "Shopping cart functionality: add/remove items, update quantities, apply discount coupon codes, display subtotal/tax/total, persist cart for logged-in users, and clear cart after successful checkout.",
+  api: "REST API endpoint: POST /api/v1/users/register — accepts name, email, password, and role. Returns JWT token on success. Validates email format, password strength (min 8 chars, 1 uppercase, 1 number, 1 special), and checks for duplicate email."
+};
+
+function loadExample(key) {
+  document.getElementById('scenarioInput').value = examples[key];
+}
+
+function selectType(el) {
+  document.querySelectorAll('.opt-card').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  selectedType = el.dataset.type;
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.tab[data-tab="${tab}"]`).classList.add('active');
+  document.getElementById('tabManual').classList.add('hidden');
+  document.getElementById('tabAutomation').classList.add('hidden');
+  document.getElementById('tabSummary').classList.add('hidden');
+  document.getElementById(`tab${tab.charAt(0).toUpperCase()+tab.slice(1)}`).classList.remove('hidden');
+}
+
+function toggleCard(card) {
+  card.classList.toggle('open');
+}
+
+function renderManualCard(tc, idx) {
+  const priorityClass = tc.priority === 'High' ? 'p-high' : tc.priority === 'Medium' ? 'p-medium' : 'p-low';
+  const steps = (tc.steps || []).map((s, i) => `<li><span class="step-num">${i+1}</span><span>${s}</span></li>`).join('');
+  return `
+    <div class="tc-card" onclick="toggleCard(this)">
+      <div class="tc-header">
+        <span class="tc-id manual">TC-M${String(idx+1).padStart(3,'0')}</span>
+        <span class="tc-title">${tc.title}</span>
+        <span class="tc-priority ${priorityClass}">${tc.priority}</span>
+        <span class="tc-chevron">▼</span>
+      </div>
+      <div class="tc-body">
+        <div class="tc-meta">
+          <span class="tc-tag">📁 ${tc.category || 'Functional'}</span>
+          <span class="tc-tag">🔧 ${tc.type || 'Positive'}</span>
+          ${tc.module ? `<span class="tc-tag">📌 ${tc.module}</span>` : ''}
+        </div>
+        ${tc.preconditions ? `<div class="tc-section"><div class="tc-section-label">Preconditions</div><div class="tc-section-content">${tc.preconditions}</div></div>` : ''}
+        ${tc.steps?.length ? `<div class="tc-section"><div class="tc-section-label">Test Steps</div><div class="tc-section-content"><ul class="step-list">${steps}</ul></div></div>` : ''}
+        ${tc.expected ? `<div class="tc-section"><div class="tc-section-label">Expected Result</div><div class="tc-section-content">${tc.expected}</div></div>` : ''}
+        ${tc.testData ? `<div class="tc-section"><div class="tc-section-label">Test Data</div><div class="tc-section-content">${tc.testData}</div></div>` : ''}
+      </div>
+    </div>`;
+}
+
+function renderAutoCard(tc, idx) {
+  const priorityClass = tc.priority === 'High' ? 'p-high' : tc.priority === 'Medium' ? 'p-medium' : 'p-low';
+  return `
+    <div class="tc-card" onclick="toggleCard(this)">
+      <div class="tc-header">
+        <span class="tc-id auto">TC-A${String(idx+1).padStart(3,'0')}</span>
+        <span class="tc-title">${tc.title}</span>
+        <span class="tc-priority ${priorityClass}">${tc.priority}</span>
+        <span class="tc-chevron">▼</span>
+      </div>
+      <div class="tc-body">
+        <div class="tc-meta">
+          <span class="tc-tag">📁 ${tc.category || 'Automation'}</span>
+          <span class="tc-tag">🔧 ${tc.type || 'Positive'}</span>
+          ${tc.framework ? `<span class="tc-tag">⚙️ ${tc.framework}</span>` : ''}
+        </div>
+        ${tc.description ? `<div class="tc-section"><div class="tc-section-label">Description</div><div class="tc-section-content">${tc.description}</div></div>` : ''}
+        ${tc.code ? `<div class="tc-section"><div class="tc-section-label">Code Snippet</div><div class="code-block">${escHtml(tc.code)}</div></div>` : ''}
+        ${tc.assertions ? `<div class="tc-section"><div class="tc-section-label">Assertions</div><div class="tc-section-content">${tc.assertions}</div></div>` : ''}
+      </div>
+    </div>`;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function renderSummary(data) {
+  document.getElementById('sumManual').textContent = data.manual?.length || 0;
+  document.getElementById('sumAuto').textContent = data.automation?.length || 0;
+  document.getElementById('sumTotal').textContent = (data.manual?.length || 0) + (data.automation?.length || 0);
+
+  const covAreas = data.summary?.coverageAreas || [];
+  document.getElementById('coverageList').innerHTML = covAreas.map(a => `
+    <div class="cov-item">
+      <div class="cov-dot"></div>
+      <div class="cov-name">${a.name}</div>
+      <div class="cov-bar-wrap"><div class="cov-bar" style="width:${a.coverage}%"></div></div>
+      <div style="font-size:12px;color:var(--muted);font-family:'Space Mono',monospace">${a.coverage}%</div>
+    </div>`).join('');
+
+  const recs = data.summary?.recommendations || [];
+  document.getElementById('recommendations').innerHTML = recs.map(r => `• ${r}<br>`).join('');
+  document.getElementById('summaryResults').classList.remove('hidden');
+}
+
+async function generateTestCases() {
+  const scenario = document.getElementById('scenarioInput').value.trim();
+  if (!scenario) { alert('Please enter a test scenario.'); return; }
+
+  const framework = document.getElementById('framework').value;
+  const language = document.getElementById('language').value;
+  const priority = document.getElementById('priority').value;
+  const depth = document.getElementById('depth').value;
+
+  const btn = document.getElementById('generateBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span>⏳</span> Generating...';
+
+  document.getElementById('emptyState').classList.add('hidden');
+  document.getElementById('loadingState').classList.remove('hidden');
+  document.getElementById('manualResults').classList.add('hidden');
+  document.getElementById('automationResults').classList.add('hidden');
+  document.getElementById('summaryResults').classList.add('hidden');
+  document.getElementById('errorState').classList.add('hidden');
+
+  const typeInstruction = {
+    both: 'Generate BOTH manual and automation test cases.',
+    manual: 'Generate ONLY manual test cases. Set automation array to empty [].',
+    automation: 'Generate ONLY automation test cases. Set manual array to empty [].',
+    edge: 'Focus primarily on EDGE CASES, boundary values, negative tests, and error scenarios for both manual and automation.'
+  }[selectedType];
+
+  const prompt = `You are an expert QA engineer. ${typeInstruction}
+
+SCENARIO: ${scenario}
+AUTOMATION FRAMEWORK: ${framework}
+PROGRAMMING LANGUAGE: ${language}
+PRIORITY FOCUS: ${priority}
+COVERAGE DEPTH: ${depth}
+
+Generate comprehensive test cases covering:
+- Positive/Happy path tests
+- Negative tests & error handling
+- Boundary value analysis
+- Edge cases
+- Security checks (if applicable)
+- Performance considerations
+- Accessibility (if UI)
+- Cross-browser/device (if UI)
+
+Respond ONLY with valid JSON (no markdown, no backticks, no preamble):
+{
+  "manual": [
+    {
+      "title": "string",
+      "priority": "High|Medium|Low",
+      "category": "string (e.g. Functional, Security, UI, Performance)",
+      "type": "Positive|Negative|Boundary|Edge Case|Security",
+      "module": "string",
+      "preconditions": "string",
+      "steps": ["step1", "step2", "step3"],
+      "expected": "string",
+      "testData": "string (optional)"
+    }
+  ],
+  "automation": [
+    {
+      "title": "string",
+      "priority": "High|Medium|Low",
+      "category": "string",
+      "type": "Positive|Negative|Boundary|Edge Case",
+      "framework": "${framework}",
+      "description": "string",
+      "code": "string (actual ${language} code using ${framework})",
+      "assertions": "string"
+    }
+  ],
+  "summary": {
+    "coverageAreas": [
+      {"name": "string", "coverage": 85}
+    ],
+    "recommendations": ["string", "string"]
+  }
+}
+
+Generate at least 8-12 manual test cases and 6-10 automation test cases (unless type restricts it). Make code snippets realistic and runnable.`;
+
+  try {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 8000,
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+
+    const data = await response.json();
+    const raw = data.content?.map(c => c.text || '').join('');
+
+    // Parse JSON
+    const clean = raw.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(clean);
+    allData = parsed;
+
+    document.getElementById('loadingState').classList.add('hidden');
+
+    // Render manual
+    const manualList = document.getElementById('manualList');
+    manualList.innerHTML = (parsed.manual || []).map((tc, i) => renderManualCard(tc, i)).join('');
+    document.getElementById('manualCount').textContent = parsed.manual?.length || 0;
+    document.getElementById('manualCountHeader').textContent = `${parsed.manual?.length || 0} cases`;
+    document.getElementById('manualResults').classList.remove('hidden');
+
+    // Render automation
+    const autoList = document.getElementById('automationList');
+    autoList.innerHTML = (parsed.automation || []).map((tc, i) => renderAutoCard(tc, i)).join('');
+    document.getElementById('autoCount').textContent = parsed.automation?.length || 0;
+    document.getElementById('autoCountHeader').textContent = `${parsed.automation?.length || 0} cases`;
+    document.getElementById('automationResults').classList.remove('hidden');
+
+    // Summary
+    renderSummary(parsed);
+
+  } catch (err) {
+    document.getElementById('loadingState').classList.add('hidden');
+    const errDiv = document.getElementById('errorState');
+    errDiv.innerHTML = `<div class="error-msg">⚠️ <span>Error generating test cases: ${err.message}. Please try again.</span></div>`;
+    errDiv.classList.remove('hidden');
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '<span>⚡</span> Generate Test Cases';
+}
+
+function exportCSV(type) {
+  if (!allData?.manual?.length) return;
+  const rows = [['ID','Title','Priority','Category','Type','Module','Preconditions','Steps','Expected','Test Data']];
+  allData.manual.forEach((tc, i) => {
+    rows.push([
+      `TC-M${String(i+1).padStart(3,'0')}`,
+      tc.title, tc.priority, tc.category, tc.type, tc.module || '',
+      tc.preconditions || '',
+      (tc.steps || []).join(' | '),
+      tc.expected || '',
+      tc.testData || ''
+    ]);
+  });
+  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  download('manual_test_cases.csv', csv, 'text/csv');
+}
+
+function exportCode() {
+  if (!allData?.automation?.length) return;
+  const code = allData.automation.map((tc, i) => `# TC-A${String(i+1).padStart(3,'0')}: ${tc.title}\n# Priority: ${tc.priority} | Type: ${tc.type}\n\n${tc.code || '# No code available'}\n`).join('\n' + '='*60 + '\n\n');
+  download('automation_tests.py', code, 'text/plain');
+}
+
+function download(filename, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], {type}));
+  a.download = filename;
+  a.click();
+}
+</script>
+</body>
+</html>
